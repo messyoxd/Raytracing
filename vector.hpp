@@ -1,3 +1,5 @@
+#ifndef __GEOMETRY_H__
+#define __GEOMETRY_H__
 #include <cmath>
 #include <vector>
 #include <cassert>
@@ -79,3 +81,4 @@ template <size_t DIM, typename T> std::ostream& operator<<(std::ostream& out, co
     }
     return out ;
 }
+#endif //__GEOMETRY_H__
