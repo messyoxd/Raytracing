@@ -91,13 +91,19 @@ Vec3f castRay(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &sp
     Vec3f point, N;
     Material material;
     if(!scene_intersect(orig, dir, spheres, point, N, material)){
-        return Vec3f(1.,1.,1.);
+        return Vec3f(0.25,0.25,1.);
     }
     float diffuse_light_intensity = 0.0, specular_light_intensity = 0;
     for (size_t i=0; i < lights.size(); i++){
 
         Vec3f light_dir = (lights[i].position - point).normalize();
+        float light_distance = (lights[i].position - point).norm();
 
+        Vec3f shadow_orig = light_dir*N < 0 ? point - N*1e-3 : point + N*1e-3;
+        Vec3f shadow_pt, shadow_N;
+        Material tmpmaterial;
+        if (scene_intersect(shadow_orig, light_dir, spheres, shadow_pt, shadow_N, tmpmaterial) && (shadow_pt-shadow_pt).norm() < light_distance)
+            continue;
         diffuse_light_intensity += (light_dir*N)*lights[i].intensity;
         // specular_light_intensity = (0, R.V)^specular_index, where V is the vector
         // from the pixel to the object's intersection point and R is the vector that
@@ -151,7 +157,7 @@ int main() {
     spheres.push_back(Sphere (Vec3f(-1.0,-1.5,-18),2,metal));
     spheres.push_back(Sphere (Vec3f(3.0,-0.5,-15),2,metal));
     spheres.push_back(Sphere (Vec3f(7,5,-18),2,gold));
-    spheres.push_back(Sphere (Vec3f(0,10,-18),2,red_rubber));
+    spheres.push_back(Sphere (Vec3f(0,4,-10),2,red_rubber));
     std::vector<Light> lights;
     lights.push_back(Light (Vec3f(-20,20,20),1.5));
     lights.push_back(Light (Vec3f(30,-50,-25),1.8));
