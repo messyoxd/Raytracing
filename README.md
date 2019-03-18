@@ -10,9 +10,9 @@
 
 ### 2. in the repository root run:
 
-'''
+```
 g++ raycaster.cpp -o raycaster
-'''
+```
 
 ### 3. run the executable
 

@@ -18,8 +18,10 @@ class Material {
 
     public:
         Vec3f diffuse_color;
-        Material(const Vec3f &color): diffuse_color(color){}
-        Material(): diffuse_color(){}
+        Vec2f albedo;
+        float specular_gradient;
+        Material(const Vec3f &color, const Vec2f &a, const float &spec): diffuse_color(color), albedo(a), specular_gradient(spec){}
+        Material(): diffuse_color(), albedo(1,0), specular_gradient(){}
 
 };
 
@@ -48,6 +50,13 @@ class Sphere{
             return true;
         }
 };
+
+/*
+ *  calculates the reflection ray
+*/
+Vec3f reflect(const Vec3f &I, const Vec3f &N){
+    return I - N*2.f*(I*N);
+}
 
 /*
  * checks if the ray intersects with a object and determines what object
@@ -82,22 +91,27 @@ Vec3f castRay(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &sp
     Vec3f point, N;
     Material material;
     if(!scene_intersect(orig, dir, spheres, point, N, material)){
-        return Vec3f(0.4,0.5,0.3);
+        return Vec3f(1.,1.,1.);
     }
-    float diffuse_light_intensity = 0.0;
+    float diffuse_light_intensity = 0.0, specular_light_intensity = 0;
     for (size_t i=0; i < lights.size(); i++){
 
         Vec3f light_dir = (lights[i].position - point).normalize();
+
         diffuse_light_intensity += (light_dir*N)*lights[i].intensity;
+        // specular_light_intensity = (0, R.V)^specular_index, where V is the vector
+        // from the pixel to the object's intersection point and R is the vector that
+        // is created by the reflected ray from the light source by the object's surface
+        specular_light_intensity += powf(std::max(0.f, -reflect(-light_dir,N)*dir),material.specular_gradient)*lights[i].intensity;
 
     }
-    return material.diffuse_color*diffuse_light_intensity;
+    return material.diffuse_color*diffuse_light_intensity * material.albedo[0] + Vec3f(1.,1.,1.)*specular_light_intensity * material.albedo[1];
 }
 
 /*
  *  renders a scene
  */
-void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
+void render(const Vec3f &camera, const std::vector<Sphere> &spheres, const std::vector<Light> &lights) {
     const int width    = 1024;
     const int height   = 768;
     // const float fov = 3.14159265358979323846/2;
@@ -108,7 +122,7 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
             float u = (2*(i + 0.5)/(float) width-1);
             float v = -(2*(j+ 0.5)/(float) height-1);
             Vec3f dir = Vec3f(u,v,-1).normalize();
-            framebuffer[i+j*width] = castRay(Vec3f(0,0,0), dir, spheres, lights);
+            framebuffer[i+j*width] = castRay(camera, dir, spheres, lights);
         }
     }
 
@@ -116,6 +130,9 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
     ofs.open("./out.ppm");
     ofs << "P6\n" << width << " " << height << "\n255\n";
     for (size_t i = 0; i < height*width; ++i) {
+        Vec3f &c = framebuffer[i];
+        float max = std::max(c[0], std::max(c[1],c[2]));
+        if(max>1) c=c*(1./max);
         for (size_t j = 0; j<3; j++) {
             ofs << (char)(255 * std::max(0.f, std::min(1.f, framebuffer[i][j])));
         }
@@ -124,15 +141,21 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
 }
 
 int main() {
-    Material metal(Vec3f(0.2,0.3, 0.6));
-    Material gold(Vec3f(0.99, 0.8, 0));
+    Material metal(Vec3f(0.44,0.44, 0.44), Vec2f(0.6,0.3), 50.);
+    Material gold(Vec3f(0.99, 0.8, 0), Vec2f(0.6,0.3), 50.);
+    Material red_rubber(Vec3f(0.3, 0.1, 0.1),Vec2f(0.9,  0.1),   10.);
+    // this is where the pixel mail is
+    Vec3f camera = Vec3f(0,0,0);
     std::vector<Sphere> spheres;
     spheres.push_back(Sphere(Vec3f(-3,0, -16),2,gold));
     spheres.push_back(Sphere (Vec3f(-1.0,-1.5,-18),2,metal));
     spheres.push_back(Sphere (Vec3f(3.0,-0.5,-15),2,metal));
     spheres.push_back(Sphere (Vec3f(7,5,-18),2,gold));
+    spheres.push_back(Sphere (Vec3f(0,10,-18),2,red_rubber));
     std::vector<Light> lights;
-    lights.push_back(Light (Vec3f(20,20,20),1.5));
-    render(spheres, lights);
+    lights.push_back(Light (Vec3f(-20,20,20),1.5));
+    lights.push_back(Light (Vec3f(30,-50,-25),1.8));
+    lights.push_back(Light (Vec3f(30,20,30),1.7));
+    render(camera, spheres, lights);
     return 0;
 }
