@@ -35,11 +35,11 @@ class Sphere{
         bool ray_intersect(const Vec3f &orig, const Vec3f &dir, float &t0) const {
             Vec3f L = center - orig;
             float tca = L*dir;
-            if(tca < 0) return false;            
+            if(tca < 0) return false;
             float d2 = L*L - tca*tca;
             if (d2 > radius*radius) return false;
             float thc = sqrt(radius*radius - d2);
-            // t0 will be the distance between the center of the sphere 
+            // t0 will be the distance between the center of the sphere
             // and the first point where the ray intersects
             t0       = tca - thc;
             float t1 = tca + thc;
@@ -50,10 +50,10 @@ class Sphere{
 };
 
 /*
- * checks if the ray intersects with a object and determines what object 
+ * checks if the ray intersects with a object and determines what object
  * will interfere in the pixel's color (the closest to the camera)
 */
-bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &spheres, 
+bool scene_intersect(const Vec3f &orig, const Vec3f &dir, const std::vector<Sphere> &spheres,
                     Vec3f &hit, Vec3f &N, Material &material)
 {
     float spheres_dist = std::numeric_limits<float>::max();
@@ -124,15 +124,15 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
 }
 
 int main() {
-    Material metal(Vec3f(0.2,0.5, 0.3));
-    Material gold(Vec3f(0.3, 0.1, 0.1));
+    Material metal(Vec3f(0.2,0.3, 0.6));
+    Material gold(Vec3f(0.99, 0.8, 0));
     std::vector<Sphere> spheres;
-    spheres.push_back(Sphere(Vec3f(-3,0, -16),2,metal));
-    // spheres.push_back(Sphere (Vec3f(-1.0,-1.5,-18),2,metal));
-    // spheres.push_back(Sphere (Vec3f(1.5,-0.5,-18),2,metal));
-    // spheres.push_back(Sphere (Vec3f(7,5,-18),2,gold));
+    spheres.push_back(Sphere(Vec3f(-3,0, -16),2,gold));
+    spheres.push_back(Sphere (Vec3f(-1.0,-1.5,-18),2,metal));
+    spheres.push_back(Sphere (Vec3f(3.0,-0.5,-15),2,metal));
+    spheres.push_back(Sphere (Vec3f(7,5,-18),2,gold));
     std::vector<Light> lights;
-    lights.push_back(Light (Vec3f(-20,20,20),1.5));
+    lights.push_back(Light (Vec3f(20,20,20),1.5));
     render(spheres, lights);
     return 0;
 }
