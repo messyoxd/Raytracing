@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <limits>
 
 template <size_t DIM, typename T> struct vec {
     vec() { for (size_t i=DIM; i--; data_[i] = T()); }
@@ -33,8 +34,31 @@ template <typename T> struct vec<3,T> {
           T& operator[](const size_t i)       { assert(i<3); return i<=0 ? x : (1==i ? y : z); }
     const T& operator[](const size_t i) const { assert(i<3); return i<=0 ? x : (1==i ? y : z); }
     float norm() { return std::sqrt(x*x+y*y+z*z); }
-    vec<3,T> & normalize(T l=1) { *this = (*this)*(l/norm()); return *this; }
+    vec<3,T> & normalize(T l=1) {
+        float aux = norm();
+        if(aux == 0){
+            return *this;
+        }
+        *this = (*this)*(l/norm());
+        return *this;
+    }
     T x,y,z;
+
+    T getX() { return x; }
+    T getY() { return y; }
+    T getZ() { return z; }
+
+    vec<3,T> getLowerComponent() const{
+            if(x < y && x < z)
+                return vec(1,y,z);
+            else if(y < x && y < z)
+                return vec(x,1,z);
+            else if(z < y && z < x)
+                return vec(x,y,1);
+            else
+                return vec(1,y,z);
+    };
+
 };
 
 template <typename T> struct vec<4,T> {
